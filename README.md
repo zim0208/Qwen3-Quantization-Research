@@ -30,8 +30,6 @@ GPU: NVIDIA GeForce RTX 5090 Laptop GPU
 BF16: True, CUDA: (12, 0)
 ```
 
-**Note:** Desktop RTX 5090 will show "NVIDIA GeForce RTX 5090" without "Laptop GPU" suffix.
-
 ## 📋 Prerequisites
 
 ### Hardware Requirements
