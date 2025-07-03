@@ -156,6 +156,9 @@ python3 tests/test_environment.py
 ```bash
 # Establish your system's baseline performance
 python3 experiments/baseline/qwen3_bf16_baseline.py
+
+# Run Math-500 evaluation
+python3 experiments/evaluation/math500_eval.py --model Qwen/Qwen3-4B --precision bf16
 ```
 
 ## 🐛 Troubleshooting
@@ -204,82 +207,61 @@ llm = LLM('model_name', dtype='bfloat16', gpu_memory_utilization=0.7)
 # Try smaller model first: 'microsoft/DialoGPT-medium'
 # Ensure sufficient disk space (20GB+)
 ```
+# Benchmark Evaluation
 
-## 🔧 Advanced Configuration
+## Math-500
+* **Prompt Template for Qwen3**
+   * Math Question + "Please reason step by step, and put your final answer within \boxed{}."
+   * Refer to https://huggingface.co/Qwen/Qwen3-4B for more details
+* **Hyper-parameters**
+   * https://github.com/QwenLM/Qwen3/issues/1483
+   * Thinking mode, use **temperature=0.6, top_p=0.95, and top_k=20**
+   * Non-Thinking mode, use **temperature = 0.7, top_p = 0.8, top_k = 20, and presence_penalty = 1.5**
+   * Max Sequence Length: **32768**
+* **Evaluation Method**
+   * **Math-verify https://github.com/huggingface/Math-Verify**
 
-### For RTX 5090 Desktop
+## Performance Results
+
+Based on the comparison shown in Table 17, our quantization research targets the following performance benchmarks:
+
+| Model | Math-500 Score | Architecture | Parameters |
+|-------|---------------|--------------|------------|
+| Qwen3-8B | 87.5 | Dense | 8B |
+| Qwen3-4B | 83.7 | Dense | 4B |
+| DeepSeek-R1-Distill-Qwen-14B | 93.9 | Dense | 14B |
+| DeepSeek-R1-Distill-Qwen-32B | 94.3 | Dense | 32B |
+
+**Quantization Performance Targets:**
+- **NVFP8:** Maintain >95% of baseline Math-500 performance
+- **NVFP4:** Maintain >90% of baseline Math-500 performance
+- **Accuracy Threshold:** <5% degradation from BF16 baseline
+
+### Math-500 Benchmark Targets
+- **Qwen3-4B BF16 Baseline:** 83.7% (target to maintain)
+- **Qwen3-8B BF16 Baseline:** 87.5% (aspirational target)
+- **NVFP8 Quantized:** >79.5% (>95% of baseline)
+- **NVFP4 Quantized:** >75.3% (>90% of baseline)
+
+## Evaluation Commands
+
+### Run Math-500 Evaluation
 ```bash
-# Maximum performance configuration
-llm = LLM(
-    model='Qwen/Qwen2.5-1.5B-Instruct',
-    dtype='bfloat16',
-    gpu_memory_utilization=0.95,  # Use most VRAM
-    max_model_len=32768,
-    tensor_parallel_size=1
-)
+# Run Math-500 evaluation with BF16 baseline
+python3 experiments/evaluation/math500_eval.py --model Qwen/Qwen3-4B --precision bf16
+
+# Run Math-500 evaluation with NVFP8 quantization
+python3 experiments/evaluation/math500_eval.py --model Qwen/Qwen3-4B --precision nvfp8
+
+# Run Math-500 evaluation with NVFP4 quantization
+python3 experiments/evaluation/math500_eval.py --model Qwen/Qwen3-4B --precision nvfp4
 ```
 
-### For RTX 5090 Laptop
+### Benchmark Validation
 ```bash
-# Thermal-optimized configuration
-llm = LLM(
-    model='Qwen/Qwen2.5-1.5B-Instruct',
-    dtype='bfloat16',
-    gpu_memory_utilization=0.8,   # Thermal headroom
-    max_model_len=16384,          # Reduced context for thermal management
-    tensor_parallel_size=1
-)
+# Validate benchmark setup
+python3 tests/test_math500_setup.py
+
+# Run comprehensive benchmark suite
+python3 experiments/evaluation/run_all_benchmarks.py
 ```
-
-### Custom Container Persistence
-```bash
-# Save container state for reuse
-docker commit <container_id> my-qwen3-research:latest
-
-# Run saved container
-docker run --gpus all -it my-qwen3-research:latest /bin/bash
-```
-
-## 📊 Performance Expectations
-
-### Typical Performance on RTX 5090
-
-**RTX 5090 Laptop (23.9GB VRAM) - Tested:**
-- **Model Loading:** 3-8 seconds for 1.5B parameter model
-- **Inference Speed:** 20-30 tokens/second (thermal considerations)
-- **Memory Usage:** 3-8GB VRAM for 1.5B model in BF16
-- **Context Length:** Up to 16K tokens recommended (thermal management)
-
-**RTX 5090 Desktop (24GB VRAM) - Expected:**
-- **Model Loading:** 3-8 seconds for 1.5B parameter model
-- **Inference Speed:** 40-60 tokens/second (better cooling)
-- **Memory Usage:** 3-8GB VRAM for 1.5B model in BF16
-- **Context Length:** Up to 32K tokens supported
-
-### Quantization Performance Targets
-- **NVFP8:** 1.5-2x speed improvement, 50% memory reduction
-- **NVFP4:** 2-3x speed improvement, 75% memory reduction
-- **Accuracy:** <5% degradation on Math-500 benchmark
-
-## 🎯 Success Criteria
-
-**Your environment is ready when:**
-1. ✅ All verification tests pass
-2. ✅ BF16 baseline model loads and runs
-3. ✅ Math-500 evaluation completes successfully
-4. ✅ Memory usage is stable and reasonable
-5. ✅ Performance meets expected benchmarks
-
-## 📚 Additional Resources
-
-- **Official vLLM Docs:** [https://docs.vllm.ai/](https://docs.vllm.ai/)
-- **RTX 5090 Setup Issue:** [vLLM GitHub #14452](https://github.com/vllm-project/vllm/issues/14452)
-- **NVIDIA Container Toolkit:** [Installation Guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
-- **Docker Installation:** [https://docs.docker.com/get-docker/](https://docs.docker.com/get-docker/)
-
----
-
-**Environment Setup Summary:**
-- ✅ **Recommended:** Pre-built container method (15 minutes, 95% success rate)
-- 🎯 **Goal:** Working vLLM + Blackwell GPU + quantization support
-- 📊 **Success Rate:** 95%+ with this method
