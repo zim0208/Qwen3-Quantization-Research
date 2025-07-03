@@ -142,7 +142,7 @@ print(f'Response: {outputs[0].outputs[0].text}')
 python3 tests/test_environment.py
 ```
 
-### Manual Verification Checklist
+### Verification Checklist
 - [ ] Docker container starts successfully
 - [ ] RTX 5090 detected correctly
 - [ ] vLLM imports without errors
