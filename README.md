@@ -5,7 +5,7 @@ A comprehensive evaluation of quantization methods for Qwen3 models on NVIDIA's 
 
 This section documents the **correct and reliable method** for setting up the Qwen3 quantization research environment on RTX 5090, based on extensive testing and community validation.
 
-## ⚡ Quick Setup (Recommended - 15 Minutes)
+## ⚡ Quick Setup (15 Minutes)
 
 **Use the pre-built container approach for immediate success:**
 
