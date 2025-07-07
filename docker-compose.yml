@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  dev:
+    image: nvcr.io/nvidia/tritonserver:25.05-vllm-python-py3
+    container_name: vllm-dev
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    ipc: host
+    ulimits:
+      memlock: -1
+      stack: 67108864
+    volumes:
+      # Mount your entire project
+      - .:/workspace/project
+      # Optional: Mount Python cache for faster installs
+      - ~/.cache/pip:/root/.cache/pip
+    working_dir: /workspace/project
+    # Keep container running
+    command: tail -f /dev/null
+    ports:
+      - "8000:8000"  # For vLLM API server
+      - "2222:22"    # For SSH (optional)

@@ -1,0 +1,68 @@
+services:
+  # Qwen3-BF16 Inference Server
+  qwen3-bf16-server:
+    image: nvcr.io/nvidia/tritonserver:25.05-vllm-python-py3
+    container_name: qwen3-bf16-inference
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - CUDA_VISIBLE_DEVICES=0
+      - VLLM_MODEL=Qwen/Qwen3-4B
+      - VLLM_DTYPE=bfloat16
+      - VLLM_MAX_MODEL_LEN=32768
+      - VLLM_GPU_MEMORY_UTILIZATION=0.85
+    ipc: host
+    ulimits:
+      memlock: -1
+      stack: 67108864
+    volumes:
+      - qwen3_model_cache:/root/.cache/huggingface
+      - ./logs:/workspace/logs
+    ports:
+      - "8080:8000"  # API server (using 8080 to avoid conflict)
+    command: ["python3", "-m", "vllm.entrypoints.api_server", "--model", "Qwen/Qwen3-4B", "--host", "0.0.0.0", "--port", "8000", "--dtype", "bfloat16", "--max-model-len", "32768", "--gpu-memory-utilization", "0.85", "--trust-remote-code", "--served-model-name", "qwen3-4b-bf16"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 180s
+    restart: unless-stopped
+    networks:
+      - qwen3-inference-network
+
+  # Optional: Qwen3-FP8 Inference Server (for comparison)
+  qwen3-fp8-server:
+    image: nvcr.io/nvidia/tritonserver:25.05-vllm-python-py3
+    container_name: qwen3-fp8-inference
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - CUDA_VISIBLE_DEVICES=0
+    ipc: host
+    ulimits:
+      memlock: -1
+      stack: 67108864
+    volumes:
+      - qwen3_model_cache:/root/.cache/huggingface
+    ports:
+      - "8081:8000"  # Different port to avoid conflict
+    command: ["python3", "-m", "vllm.entrypoints.api_server", "--model", "Qwen/Qwen3-4B-FP8", "--host", "0.0.0.0", "--port", "8000", "--dtype", "auto", "--max-model-len", "32768", "--gpu-memory-utilization", "0.85", "--trust-remote-code", "--served-model-name", "qwen3-4b-fp8"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 180s
+    restart: unless-stopped
+    networks:
+      - qwen3-inference-network
+    profiles:
+      - fp8  # Only start with --profile fp8
+
+volumes:
+  qwen3_model_cache:
+
+networks:
+  qwen3-inference-network:
+    driver: bridge
