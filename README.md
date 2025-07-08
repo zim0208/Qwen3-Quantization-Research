@@ -2,9 +2,6 @@
 
 This project evaluates quantization methods for Qwen3 models. It compares BF16 and standard FP8 baselines with two quantization techniques: NVIDIA (NV) and Microscaling (MX), both supporting FP8 and FP4 formats. The goal is to measure accuracy, performance, and memory efficiency on GPU systems.
 
-## About
-
-This study benchmarks Qwen3 models using BF16 and FP8 as baselines. It compares them with NV and MX quantization, both offering FP8 and FP4 formats. The results help identify trade-offs in deploying quantized models on GPUs such as Ampere, Hopper, and Blackwell.
 
 ## Quick Start
 
